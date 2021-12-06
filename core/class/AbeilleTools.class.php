@@ -598,7 +598,7 @@ class AbeilleTools
 
         if (file_exists(devicesLocalDir) == false) {
             log::add('Abeille', 'error', "ProblÃ¨me d'installation. Le chemin '...core/config/devices_local' n'existe pas.");
-            return $return
+            return $return;
         }
 
         $dh = opendir(devicesLocalDir);
