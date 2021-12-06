@@ -295,9 +295,12 @@ class AbeilleTools
         else
             $deviceFilename = devicesLocalDir.$deviceName.'/'.$deviceName.'.json';
         if (!is_file($deviceFilename)) {
-            log::add('Abeille', 'error', 'Equipement \''.$deviceName.'\' inconnu. Utilisation de la config par défaut.');
-            $deviceName = 'defaultUnknown';
-            $deviceFilename = devicesDir.$deviceName.'/'.$deviceName.'.json';
+            $deviceFilename = devicesLocalDir.$deviceName.'/'.$deviceName.'.json';
+            if (!is_file($deviceFilename)) {
+              log::add('Abeille', 'error', 'Equipement \''.$deviceName.'\' inconnu. Utilisation de la config par défaut.');
+              $deviceName = 'defaultUnknown';
+              $deviceFilename = devicesDir.$deviceName.'/'.$deviceName.'.json';
+           }
         }
 
         $jsonContent = file_get_contents($deviceFilename);
@@ -587,6 +590,55 @@ class AbeilleTools
                 continue;
             }
             $returnOneMore = array_keys($jdec)[0];
+
+            $return[] = $returnOneMore;
+            $fileCount++;
+        }
+
+
+        if (file_exists(devicesLocalDir) == false) {
+            log::add('Abeille', 'error', "ProblÃ¨me d'installation. Le chemin '...core/config/devices_local' n'existe pas.");
+            return $return
+        }
+
+        $dh = opendir(devicesLocalDir);
+        while (($dirEntry = readdir($dh)) !== false) {
+            $dirCount++;
+
+            $fullPath = devicesLocalDir.$dirEntry;
+            if (!is_dir($fullPath))
+                continue;
+            if (in_array($dirEntry, array(".", ".."))) {
+                $dirExcluded++;
+                continue;
+            }
+
+
+            $fullPath = devicesLocalDir.$dirEntry.DIRECTORY_SEPARATOR.$dirEntry.".json";
+            if (!file_exists($fullPath)) {
+                log::add('Abeille', 'warning', "Fichier introuvable: ".$fullPath);
+                $fileMissing++;
+                continue;
+            }
+
+
+            try {
+                $jsonContent = file_get_contents($fullPath);
+            } catch (Exception $e) {
+                log::add('Abeille', 'error', 'Impossible de lire le contenu du fichier '.$fullPath);
+                $fileIllisible++;
+                continue;
+            }
+
+            $jdec = json_decode($jsonContent, true);
+            if ($jdec == null) {
+                log::add('Abeille', 'error', 'Fichier corrompu: '.$fullPath);
+                $fileIllisible++;
+                continue;
+            }
+            $returnOneMore = array_keys($jdec)[0];
+
+            log::add('Abeille', 'error', "ProblÃ¨me d'installation JBY $returnOneMore.");
 
             $return[] = $returnOneMore;
             $fileCount++;
